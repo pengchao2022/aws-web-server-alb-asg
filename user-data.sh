@@ -1,9 +1,9 @@
 #!/bin/bash
-# Update and install Docker
+# Update system and install Docker
 apt-get update
 apt-get install -y docker.io
 
-# Start Docker service
+# Start and enable Docker service
 systemctl start docker
 systemctl enable docker
 
@@ -21,45 +21,28 @@ docker run -d \
   --restart unless-stopped \
   nginx:alpine
 
-# Simple CPU stress test script (for testing auto scaling)
-cat << 'EOF' > /home/ubuntu/stress_test.sh
-#!/bin/bash
-# This script is for testing purposes only
-stress_cpu() {
-    echo "Starting CPU stress test..."
-    # Install stress-ng if not present
-    if ! command -v stress-ng &> /dev/null; then
-        apt-get update
-        apt-get install -y stress-ng
-    fi
-    stress-ng --cpu 2 --timeout 300s &
-    echo "CPU stress test started for 5 minutes"
-}
-
-stop_stress() {
-    echo "Stopping CPU stress test..."
-    pkill stress-ng
-    echo "CPU stress test stopped"
-}
-
-case "$1" in
-    start)
-        stress_cpu
-        ;;
-    stop)
-        stop_stress
-        ;;
-    *)
-        echo "Usage: $0 {start|stop}"
-        exit 1
-        ;;
-esac
-EOF
-
-chmod +x /home/ubuntu/stress_test.sh
-chown ubuntu:ubuntu /home/ubuntu/stress_test.sh
-
-# Install cloudwatch agent for better monitoring
+# Optional: Install cloudwatch agent for better monitoring
 apt-get install -y unzip
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 dpkg -i -E ./amazon-cloudwatch-agent.deb
+
+# Create simple health check script
+cat << 'EOF' > /home/ubuntu/health_check.sh
+#!/bin/bash
+# Simple health check script
+echo "Instance Health Check:"
+echo "======================"
+echo "Docker status:"
+systemctl is-active docker
+echo "Nginx container status:"
+docker inspect --format='{{.State.Status}}' nginx
+echo "CPU usage:"
+top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1"%"}'
+echo "Memory usage:"
+free -h | grep Mem | awk '{print $3 " / " $2}'
+EOF
+
+chmod +x /home/ubuntu/health_check.sh
+chown ubuntu:ubuntu /home/ubuntu/health_check.sh
+
+echo "User data script completed successfully"
