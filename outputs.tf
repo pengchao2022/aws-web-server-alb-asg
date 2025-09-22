@@ -22,8 +22,3 @@ output "launch_template_id" {
   description = "ID of the launch template"
   value       = aws_launch_template.nginx_lt.id
 }
-
-output "private_instance_ips" {
-  description = "Private IPs of EC2 instances"
-  value       = aws_autoscaling_group.nginx_asg.private_ips
-}

@@ -23,7 +23,7 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# Security group for EC2 instances - 只允许来自 ALB 和 SSH 的访问
+# Security group for EC2 instances 
 resource "aws_security_group" "ec2_sg" {
   name        = "nginx-ec2-sg"
   description = "Security group for EC2 instances running Nginx"
@@ -40,7 +40,7 @@ resource "aws_security_group" "ec2_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # 生产环境中应该限制为特定 IP
+    cidr_blocks = ["0.0.0.0/0"] 
   }
 
   egress {
@@ -106,14 +106,14 @@ resource "aws_lb_listener" "nginx_listener" {
   }
 }
 
-# Launch template - 移除公网 IP 关联
+# Launch template 
 resource "aws_launch_template" "nginx_lt" {
   name_prefix   = "nginx-lt-"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
 
   network_interfaces {
-    associate_public_ip_address = false # 关键修改：不分配公网 IP
+    associate_public_ip_address = false
     security_groups             = [aws_security_group.ec2_sg.id]
   }
 
@@ -142,7 +142,7 @@ resource "aws_autoscaling_group" "nginx_asg" {
   desired_capacity          = var.desired_capacity
   health_check_type         = "ELB"
   health_check_grace_period = 300
-  vpc_zone_identifier       = var.private_subnet_ids # 使用私有子网
+  vpc_zone_identifier       = var.private_subnet_ids
   target_group_arns         = [aws_lb_target_group.nginx_tg.arn]
 
   launch_template {
